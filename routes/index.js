@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var dbConfig = require('../conf/dbconfig');
 
 //handlers
 var searchAddressEstate = require('../handlers/searchaddressestate');
@@ -60,5 +61,18 @@ router.use('/auth', auth);
 router.use('/clients', clients);
 router.use('/ngp', ngp);
 router.use('/attachment', attachment);
+
+if (dbConfig.searchEndpoints) {
+  Object.keys(dbConfig.searchEndpoints).forEach(function(searchEndpoint) {
+    if (/^[A-Za-z0-9_-]+$/.test(searchEndpoint)) {
+      router.all('/search/' + searchEndpoint, function(req, res) {
+        req.searchEndpoint = searchEndpoint;
+        search(req, res);
+      });
+    } else {
+      console.warn('Skipping invalid search endpoint route: ' + searchEndpoint);
+    }
+  });
+}
 
 module.exports = router;

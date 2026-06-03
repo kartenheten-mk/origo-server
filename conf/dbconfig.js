@@ -1,5 +1,11 @@
 module.exports = {
   limit: 100,
+  searchEndpoints: {
+    searchmora: ["search_verksamhet", "search_td"],
+    searchverksamhet: ["search_verksamhet"],
+    searchtd: ["search_td"],
+    searchall: "*",
+  },
   connectors: {
     search: {
       pg: {
