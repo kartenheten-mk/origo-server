@@ -1,124 +1,67 @@
 module.exports = {
-  limit: 10,
+  limit: 100,
   connectors: {
-      addressEstate: {
-          mssql: {
-            user: 'xxxxx',
-            password: 'xxxxx',
-            connectString: 'server name',
-            database: 'database name'
-          }
+    search: {
+      pg: {
+        connectString: "",
+        port: 5432,
       },
-      // Defines a default connector. If more than one connector is specified (only works for the search endpoint), then each search model must specify which connector to use.
-      search: {
-          pg: {
-            user: 'postgres',
-            password: 'postgres',
-            connectString: 'localhost',
-            database: 'mdk',
-			port: 5432
-          }
-          // ,
-          // mssql: {
-          //   user: 'xxxxx',
-          //   password: 'xxxxx',
-          //   connectString: 'server name',
-          //   database: 'database name'
-          // }
+      mssql: {
+        connectString: "",
       },
-      singlesearch: {
-          // oracle: {
-          //     user: 'xxxxx',
-          //     password: 'xxxxx',
-          //     connectString: process.env.NODE_ORACLEDB_CONNECTIONSTRING || 'server name:1521/orcl'
-          // }
-          // mssql: {
-          //   user: 'xxxxx',
-          //   password: 'xxxxx',
-          //   connectString: 'server name',
-          //   database: 'database name'
-          // }
-          pg: {
-            user: 'postgres',
-            password: 'postgres',
-            connectString: 'localhost',
-            database: 'rtj',
-            port: 5432
-          }
-      }
+    },
   },
-  models: {
-      singlesearch: {
-          // search: {
-          //     table: 'table name',
-          //     searchField: 'search field name',
-          //     schema: 'schema name, for example dbo',
-          //     database: 'database name',
-          //     useCentroid: true
-          // }
-          search: {
-              table: 'fastighetsytor_sammanslagen',
-              searchField: 'FASTIGHET',
-              schema: 'public',
-              geometryName: 'geom',
-              useCentroid: true
-          }
-
-      },
-      search: {
-        search: {
-          // Add a reference to the connector if using more than one.
-          // connector: 'pg',
-          tables: [
-            {
-              table: 'fastighetsytor',
-              customType: 'fastighetsindelning',
-              searchField: 'fastighetsbeteckning',
-              schema: 'public',
-              geometryName: 'geom',
-              title: 'Fastigheter',
-              useCentroid: true
-            },
-            {
-              table: 'Adresser',
-              searchField: 'NAMN',
-              schema: 'public',
-              geometryName: 'geom',
-              gid: 'OBJECTID'
-            }
-          ]
-        }
-        // ,
-        // search2: {
-        //   connector: 'mssql',
-        //   tables: [
-        //     {
-        //       table: 'gatunamn',
-        //       searchField: 'namn',
-        //       schema: 'dbo',
-        //       geometryName: 'geom',
-        //       useCentroid: false
-        //     }
-        //   ]
-        // }
-     },
-      addressEstate: {
-          addresses: {
-              table: 'table name',
-              searchField: 'search field name',
-              schema: 'schema name, for example dbo',
-              database: 'database name',
-              useCentroid: true,
-              fields: ['field name', 'field name']
+   models: {
+    search: {
+      search_verksamhet: {
+        connector: "pg",
+        database: "",
+        user: "",
+        password: "",
+        schema: "sok_moa",
+        gid: "idpkey",
+        geometryName: "geom",
+        useCentroid: false,
+        tables: [
+          {
+            table: "sok_fast_sammanslaget",
+            searchField: "sokfalt",
+            title: "Fastigheter",
           },
-          estates: {
-              table: 'table name',
-              searchField: 'search field name',
-              schema: 'schema name, for example dbo',
-              database: 'database name',
-              useCentroid: true,
-              fields: ['field name', 'field name']
-          }
-      }
-  }
+          {
+            table: "sok_adress",
+            searchField: "CONCAT_WS(' | ', beladress , kommundel  ,fastighet)",
+            title: "Adress",
+          },
+          {
+            table: "sok_vagar",
+            searchField: "sokfalt",
+            title: "Vägar",
+          },
+          {
+            table: "sok_platser",
+            searchField: "sokfalt",
+            title: "Platser",
+          },
+        ],
+      },
+      search_td: {
+        connector: "pg",
+        user: "",
+        password: "",
+        database: "",
+        schema: "",
+        gid: "td_id",
+        geometryName: 'ST_Transform(geom,3006)',
+        useCentroid: false,
+        tables: [
+          {
+            table: "dp_plan_y",
+            searchField: "CONCAT_WS(' | ', dp_plannummer , dp_aktnummer, dp_plannamn)",
+            title: "Detaljplaner",
+          },
+        ],
+      },
+    },
+  },
 };
