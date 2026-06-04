@@ -7,6 +7,7 @@
  * @param {object} queryOptions An object containing query parameters.
  * @param {string} queryOptions.schema The database schema.
  * @param {string} queryOptions.table The table to search in.
+ * @param {string} queryOptions.title The title of the resultset
  * @param {string} queryOptions.searchField The field to search within.
  * @param {string[]} [queryOptions.fields] An array of additional fields to include in the result.
  * @param {string} [queryOptions.gid='gid'] The name of the geometry id field.
@@ -18,7 +19,7 @@
  */
 var pgDefault = function pgDefault(queryString, queryOptions, defaultLimit, maxQueryStringLength = 100) {
     // Destructure the queryOptions object for easy access to its properties, also set default values using destructuring
-    const { schema, table, searchField, fields, gid = 'gid', limit: queryLimit } = queryOptions;
+    const { schema, table, title, searchField, fields, gid = 'gid', limit: queryLimit } = queryOptions;
   
     // Determine the limit number, using the provided limit, default limit, or 100 as a fallback
     const limitNumber = queryLimit || defaultLimit || 100;
@@ -43,13 +44,17 @@ var pgDefault = function pgDefault(queryString, queryOptions, defaultLimit, maxQ
     // Construct the SQL fragment for the table type with single quotes around the table name.
     const type = ` '${table}' AS "TYPE", `;
   
+     // Construct the title
+     const resultsetTitle = title ? ` '${title}' AS "TITLE",` : ""; 
+
     // Construct the SQL fragment for the GEOM field, setting it to NULL
     const geom = ` NULL as "GEOM" `;
   
     // Construct the SQL fragment for the limit, adding the word "LIMIT" with the limitNumber
     const limit = ` LIMIT ${limitNumber}`;
   
-  
+    
+
     // Construct the complete SQL query string using template literals for readability.
     // Inserts all the constructed SQL fragments from the above variables into the SQL template
 	// Prioritize entries where the search field starts with the provided prefix
@@ -57,6 +62,7 @@ var pgDefault = function pgDefault(queryString, queryOptions, defaultLimit, maxQ
       SELECT
          ${sqlSearchField}
          ${gid} AS "GID",
+         ${resultsetTitle}
          ${sqlFields}
          ${type}
          ${geom}
