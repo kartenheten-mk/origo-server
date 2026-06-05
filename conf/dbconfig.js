@@ -1,5 +1,19 @@
 module.exports = {
   limit: 10,
+  // Maps /search/:searchEndpoint to one or more models.search configs.
+  // /search uses "default" if defined. A value of "*" includes every config in models.search.
+  searchEndpoints: {
+      // Working example with two PostgreSQL connectors/aliases.
+      // /search uses default and searches both search_verksamhet and search_myndighet.
+      // /search/searchmora searches both search_verksamhet and search_myndighet.
+      // /search/searchverksamhet searches only search_verksamhet.
+      // /search/searchtd searches only search_myndighet.
+      default: ['search_verksamhet', 'search_myndighet'],
+      searchmora: ['search_verksamhet', 'search_myndighet'],
+      searchverksamhet: ['search_verksamhet'],
+      searchmyndighet: ['search_myndighet'],
+      searchall: '*'
+  },
   connectors: {
       addressEstate: {
           mssql: {
@@ -9,16 +23,30 @@ module.exports = {
             database: 'database name'
           }
       },
-      // Defines a default connector. If more than one connector is specified (only works for the search endpoint), then each search model must specify which connector to use.
+      // Defines search connectors. If more than one connector is specified, each search model must specify which connector to use.
+      // Multiple connectors of the same database type can use aliases with type, for example pg_verksamhet: { type: 'pg', ... }.
       search: {
-          pg: {
-            user: 'postgres',
-            password: 'postgres',
-            connectString: 'localhost',
-            database: 'mdk',
-			port: 5432
+          // PostgreSQL connector #1. Replace placeholder values with real credentials.
+           pg_verksamhet: {
+            type: 'pg',
+            user: 'postgres_user_1',
+            password: 'postgres_password_1',
+            connectString: 'postgres_host_1',
+            database: 'verksamhet_db',
+            port: 5432
+          },
+          // PostgreSQL connector #2. Replace placeholder values with real credentials.
+          pg_td: {
+            type: 'pg',
+            user: 'postgres_user_2',
+            password: 'postgres_password_2',
+            connectString: 'postgres_host_2',
+            database: 'td_db',
+            port: 5432
           }
           // ,
+          // Example: enable this connector together with pg to search multiple database types.
+          // When more than one connector is enabled, each model in models.search should set connector: 'pg', connector: 'mssql', etc.
           // mssql: {
           //   user: 'xxxxx',
           //   password: 'xxxxx',
@@ -66,41 +94,57 @@ module.exports = {
 
       },
       search: {
-        search: {
-          // Add a reference to the connector if using more than one.
-          // connector: 'pg',
+        // Search config using the pg_verksamhet connector alias above.
+        search_verksamhet: {
+          connector: 'pg_verksamhet',
           tables: [
             {
-              table: 'fastighetsytor',
-              customType: 'fastighetsindelning',
-              searchField: 'fastighetsbeteckning',
-              schema: 'public',
+              table: 'sok_adress',
+              searchExpression: "CONCAT_WS(' | ', beladress, kommundel, fastighet)",
+              schema: 'sok_moa',
               geometryName: 'geom',
-              title: 'Fastigheter',
-              useCentroid: true
+              title: 'Adress',
+              gid: 'idpkey',
+              useCentroid: false
             },
             {
-              table: 'Adresser',
-              searchField: 'NAMN',
-              schema: 'public',
+              table: 'sok_fast_sammanslaget',
+              searchField: 'sokfalt',
+              schema: 'sok_moa',
               geometryName: 'geom',
-              gid: 'OBJECTID'
+              title: 'Fastigheter',
+              gid: 'idpkey',
+              useCentroid: false
             }
           ]
+        },
+        // Search config using the pg_myndighet connector alias above.
+        search_myndighet: {
+          connector: 'pg_myndighet',
+          tables: [
+            {
+              table: 'ortnamn',
+              // customType: 'td',
+              searchExpression: "CONCAT_WS(' | ', ortnamn , sockenstadnamn)",
+              schema: 'lantmateriet',
+              geometryName: 'geom',
+              title: 'Plats',
+              gid: 'idpkey',
+              useCentroid: false
+            }
+            // ,
+            // {
+            //   table: 'sok_adress',
+            //   // customType: 'td_2',
+            //   searchField: "CONCAT_WS(' | ', beladress , kommundel  ,fastighet)",
+            //   schema: 'sok_moa',
+            //   geometryName: 'geom',
+            //   title: 'Teknisk data 2',
+            //   gid: 'idpkey',
+            //   useCentroid: false
+            // }
+          ]
         }
-        // ,
-        // search2: {
-        //   connector: 'mssql',
-        //   tables: [
-        //     {
-        //       table: 'gatunamn',
-        //       searchField: 'namn',
-        //       schema: 'dbo',
-        //       geometryName: 'geom',
-        //       useCentroid: false
-        //     }
-        //   ]
-        // }
      },
       addressEstate: {
           addresses: {

@@ -3,8 +3,10 @@ var pgDefault = function pgDefault(queryString, queryOptions) {
   var table = queryOptions.table;
   var customType = queryOptions.customType;
   var searchField = queryOptions.searchField;
+  var searchExpression = queryOptions.searchExpression;
+  var searchSql = searchExpression || '"' + table + '"."' + searchField + '"';
   var gid = queryOptions.gid || 'gid';
-  var sqlSearchField = searchField ? 'CAST("' + table + '"."' + searchField + '" AS TEXT) AS "NAMN",' : "";
+  var sqlSearchField = searchSql ? 'CAST(' + searchSql + ' AS TEXT) AS "NAMN",' : "";
   var fields = queryOptions.fields;
   var geometryField = queryOptions.geometryName || "geom";
   var useCentroid = queryOptions.hasOwnProperty("useCentroid") ? queryOptions.useCentroid : true;
@@ -26,8 +28,8 @@ var pgDefault = function pgDefault(queryString, queryOptions) {
     title +
     wkt +
     ' FROM ' + schema + '."' + table + '"' +
-    ' WHERE LOWER(CAST("' + table + '"."' + searchField + '"' + " AS TEXT)) ILIKE LOWER('" + condition + "%')" +
-    ' ORDER BY "' + table + '"."' + searchField + '"' +
+    ' WHERE LOWER(CAST(' + searchSql + " AS TEXT)) ILIKE LOWER('" + condition + "%')" +
+    ' ORDER BY ' + searchSql +
     limit + ';';
 
   return searchString;
