@@ -1,5 +1,5 @@
 module.exports = {
-  limit: 10,
+  limit: 100,
   // Maps /search/:searchEndpoint to one or more models.search configs.
   // /search uses "default" if defined. A value of "*" includes every config in models.search.
   searchEndpoints: {
@@ -27,7 +27,7 @@ module.exports = {
       // Multiple connectors of the same database type can use aliases with type, for example pg_verksamhet: { type: 'pg', ... }.
       search: {
           // PostgreSQL connector #1. Replace placeholder values with real credentials.
-           pg_verksamhet: {
+          pg_verksamhet: {
             type: 'pg',
             user: 'postgres_user_1',
             password: 'postgres_password_1',

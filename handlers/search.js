@@ -27,6 +27,16 @@ function sendError(res, statusCode, message) {
   res.end(result);
 }
 
+function normalizeQueryResult(queryResult) {
+  if (queryResult && typeof queryResult === 'object' && queryResult.queryString) {
+    return queryResult;
+  }
+
+  return {
+    queryString: queryResult
+  };
+}
+
 function getAllSearchModelNames() {
   return Object.keys(searchModel || {});
 }
@@ -200,7 +210,13 @@ var search = function(req, res) {
       return;
     }
 
+    var modelError;
+
     tables.forEach(function(table) {
+      if (modelError) {
+        return;
+      }
+
       var options = Object.assign({}, connector.config, multiSearchModel, table);
       options.limit = options.limit || dbConfig.limit;
       if (req.query.limit && req.query.c !== 'true') {
@@ -208,11 +224,18 @@ var search = function(req, res) {
       } else {
         options.limit = options.limit || 100;
       }
-      var searchString = model[db](query, options);
-      queries.push({
-        queryString: searchString
-      });
+
+      try {
+        queries.push(normalizeQueryResult(model[db](query, options)));
+      } catch (err) {
+        modelError = err;
+      }
     });
+
+    if (modelError) {
+      sendError(res, modelError.statusCode || 500, modelError.message || 'Failed to build search query');
+      return;
+    }
 
     modelQueries.push({
       name: multiSearchModels[i].name,
