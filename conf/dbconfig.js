@@ -1,5 +1,13 @@
 module.exports = {
   limit: 100,
+  // Optional: controls the final /search result order by each row's TYPE value.
+  // TYPE normally comes from a table's customType, or from the table name if customType is not set.
+  // Types not listed here are still returned after the configured types, preserving their current relative order.
+  searchResultTypeOrder: [
+      'sok_fast_sammanslaget',
+      'sok_adress',
+      'ortnamn'
+  ],
   // Maps /search/:searchEndpoint to one or more models.search configs.
   // /search uses "default" if defined. A value of "*" includes every config in models.search.
   searchEndpoints: {
@@ -27,7 +35,7 @@ module.exports = {
       // Multiple connectors of the same database type can use aliases with type, for example pg_verksamhet: { type: 'pg', ... }.
       search: {
           // PostgreSQL connector #1. Replace placeholder values with real credentials.
-          pg_verksamhet: {
+         pg_verksamhet: {
             type: 'pg',
             user: 'postgres_user_1',
             password: 'postgres_password_1',

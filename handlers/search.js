@@ -37,6 +37,69 @@ function normalizeQueryResult(queryResult) {
   };
 }
 
+function getResultType(result) {
+  if (!result || typeof result !== 'object') {
+    return undefined;
+  }
+
+  if (hasOwn(result, 'TYPE')) {
+    return result.TYPE;
+  }
+
+  if (hasOwn(result, 'type')) {
+    return result.type;
+  }
+}
+
+function buildResultTypeOrderMap(resultTypeOrder) {
+  var orderMap = {};
+
+  if (!Array.isArray(resultTypeOrder)) {
+    return orderMap;
+  }
+
+  resultTypeOrder.forEach(function(type, index) {
+    if (type === undefined || type === null) {
+      return;
+    }
+
+    var typeName = String(type);
+    if (!hasOwn(orderMap, typeName)) {
+      orderMap[typeName] = index;
+    }
+  });
+
+  return orderMap;
+}
+
+function sortSearchResultsByType(results, resultTypeOrder) {
+  if (!Array.isArray(results) || !Array.isArray(resultTypeOrder) || resultTypeOrder.length === 0) {
+    return results;
+  }
+
+  var orderMap = buildResultTypeOrderMap(resultTypeOrder);
+  var fallbackOrder = resultTypeOrder.length;
+
+  return results.map(function(result, index) {
+    var type = getResultType(result);
+    var typeName = type === undefined || type === null ? undefined : String(type);
+
+    return {
+      result: result,
+      index: index,
+      order: typeName !== undefined && hasOwn(orderMap, typeName) ? orderMap[typeName] : fallbackOrder
+    };
+  }).sort(function(a, b) {
+    if (a.order !== b.order) {
+      return a.order - b.order;
+    }
+
+    return a.index - b.index;
+  }).map(function(item) {
+    return item.result;
+  });
+}
+
 function getAllSearchModelNames() {
   return Object.keys(searchModel || {});
 }
@@ -264,7 +327,7 @@ var search = function(req, res) {
         finishedModels += 1;
         if (finishedModels === modelQueries.length) {
           responseSent = true;
-          sendResponse(res, JSON.stringify(mergedResult));
+          sendResponse(res, JSON.stringify(sortSearchResultsByType(mergedResult, dbConfig.searchResultTypeOrder)));
         }
       })
       .catch(function(err) {
