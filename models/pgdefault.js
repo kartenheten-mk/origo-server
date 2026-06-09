@@ -2,6 +2,8 @@ var DEFAULT_LIMIT = 100;
 var DEFAULT_MAX_LIMIT = 100;
 var DEFAULT_MAX_QUERY_STRING_LENGTH = 100;
 var MAX_SEARCH_EXPRESSION_LENGTH = 1000;
+var MAX_SEARCH_EXPRESSION_SEPARATOR_LENGTH = 100;
+var SAFE_SEARCH_EXPRESSION_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 function hasOwn(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
@@ -42,18 +44,69 @@ function quoteQualifiedIdentifier(parts, label) {
   }).join('.');
 }
 
-function validateSearchExpression(searchExpression) {
+function quoteStringLiteral(value, label) {
+  var stringValue = String(value);
+
+  if (/\u0000|\\/.test(stringValue)) {
+    throw createError('Invalid PostgreSQL string literal for ' + label + '.', 500);
+  }
+
+  return "'" + stringValue.replace(/'/g, "''") + "'";
+}
+
+function parseSqlStringLiteral(literal, label) {
+  var stringLiteral = String(literal || '').trim();
+
+  if (!/^'(?:''|[^'\u0000\\])*'$/.test(stringLiteral)) {
+    throw createError('Invalid PostgreSQL string literal for ' + label + '.', 500);
+  }
+
+  return stringLiteral.slice(1, -1).replace(/''/g, "'");
+}
+
+function validateSearchExpressionField(reference) {
+  var columnReference = String(reference || '').trim();
+
+  if (!SAFE_SEARCH_EXPRESSION_IDENTIFIER.test(columnReference)) {
+    throw createError('Invalid PostgreSQL searchExpression field reference: ' + columnReference, 500);
+  }
+
+  return columnReference;
+}
+
+function buildSearchExpression(searchExpression, defaultTableAlias) {
   if (!searchExpression) {
     return '';
   }
 
   var expression = String(searchExpression).trim();
 
-  if (expression.length > MAX_SEARCH_EXPRESSION_LENGTH || /;|--|\/\*|\*\/|\u0000/.test(expression)) {
+  if (expression.length > MAX_SEARCH_EXPRESSION_LENGTH || /\u0000/.test(expression)) {
     throw createError('Unsafe PostgreSQL searchExpression in search configuration.', 500);
   }
 
-  return expression;
+  var concatMatch = expression.match(/^CONCAT_WS\s*\(\s*('(?:''|[^'\u0000\\])*')\s*,\s*(.+?)\s*\)$/i);
+
+  if (!concatMatch) {
+    throw createError("Unsupported PostgreSQL searchExpression. Allowed expression: CONCAT_WS('separator', field, ...).", 500);
+  }
+
+  var separator = parseSqlStringLiteral(concatMatch[1], 'searchExpression separator');
+
+  if (separator.length > MAX_SEARCH_EXPRESSION_SEPARATOR_LENGTH) {
+    throw createError('PostgreSQL searchExpression separator exceeds the maximum allowed length of ' +
+      MAX_SEARCH_EXPRESSION_SEPARATOR_LENGTH + ' characters.', 500);
+  }
+
+  var fields = concatMatch[2].split(',');
+
+  if (fields.length === 0) {
+    throw createError('PostgreSQL searchExpression must contain at least one field.', 500);
+  }
+
+  return 'CONCAT_WS(' + quoteStringLiteral(separator, 'searchExpression separator') + ', ' + fields.map(function(field) {
+    return quoteColumnReference(validateSearchExpressionField(field), defaultTableAlias);
+  }).join(', ') + ')';
 }
 
 function quoteColumnReference(reference, defaultTableAlias) {
@@ -141,7 +194,7 @@ var pgDefault = function pgDefault(queryString, queryOptions, defaultLimit, maxQ
   var table = queryOptions.table;
   var customType = queryOptions.customType;
   var searchField = queryOptions.searchField;
-  var searchExpression = validateSearchExpression(queryOptions.searchExpression);
+  var searchExpressionConfig = queryOptions.searchExpression;
   var gid = queryOptions.gid || 'gid';
   var fields = queryOptions.fields;
   var geometryField = queryOptions.geometryName || 'geom';
@@ -155,6 +208,7 @@ var pgDefault = function pgDefault(queryString, queryOptions, defaultLimit, maxQ
 
   var tableQualifier = quoteIdentifier(table, 'table');
   var tableReference = quoteQualifiedIdentifier([schema, table], 'table');
+  var searchExpression = buildSearchExpression(searchExpressionConfig, tableQualifier);
   var searchSql = searchExpression || (tableQualifier + '.' + quoteIdentifier(searchField, 'searchField'));
   var geometryReference = tableQualifier + '.' + quoteIdentifier(geometryField, 'geometryName');
   var gidReference = tableQualifier + '.' + quoteIdentifier(gid, 'gid');
