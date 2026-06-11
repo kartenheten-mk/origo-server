@@ -4,14 +4,13 @@ module.exports = {
   // TYPE normally comes from a table's customType, or from the table name if customType is not set.
   // Types not listed here are still returned after the configured types, preserving their current relative order.
   searchResultTypeOrder: [
-      'sok_fast_sammanslaget',
+      'sok_fast',
       'sok_adress',
       'ortnamn'
   ],
   // Maps /search/:searchEndpoint to one or more models.search configs.
   // /search uses "default" if defined. A value of "*" includes every config in models.search.
   searchEndpoints: {
-      // Working example with two PostgreSQL connectors/aliases.
       // /search uses default and searches both search_verksamhet and search_myndighet.
       // /search/searchmora searches both search_verksamhet and search_myndighet.
       // /search/searchverksamhet searches only search_verksamhet.
@@ -20,7 +19,7 @@ module.exports = {
       searchmora: ['search_verksamhet', 'search_myndighet'],
       searchverksamhet: ['search_verksamhet'],
       searchmyndighet: ['search_myndighet'],
-      searchall: '*'
+      //searchall: '*'
   },
   connectors: {
       addressEstate: {
@@ -109,19 +108,19 @@ module.exports = {
             {
               table: 'sok_adress',
               searchExpression: "CONCAT_WS(' | ', beladress, kommundel, fastighet)",
-              schema: 'sok_moa',
+              schema: 'sok',
               geometryName: 'geom',
               title: 'Adress',
-              gid: 'idpkey',
+              gid: 'gid',
               useCentroid: false
             },
             {
-              table: 'sok_fast_sammanslaget',
+              table: 'sok_fast',
               searchField: 'sokfalt',
               schema: 'sok_moa',
               geometryName: 'geom',
               title: 'Fastigheter',
-              gid: 'idpkey',
+              gid: 'id',
               useCentroid: false
             }
           ]
@@ -134,10 +133,10 @@ module.exports = {
               table: 'ortnamn',
               // customType: 'td',
               searchExpression: "CONCAT_WS(' | ', ortnamn , sockenstadnamn)",
-              schema: 'lantmateriet',
+              schema: 'lm',
               geometryName: 'geom',
               title: 'Plats',
-              gid: 'idpkey',
+              gid: 'id',
               useCentroid: false
             }
             // ,
