@@ -39,7 +39,7 @@ module.exports = {
             user: 'postgres_user_1',
             password: 'postgres_password_1',
             connectString: 'postgres_host_1',
-            database: 'verksamhet_db',
+            database: 'verksamhet',
             port: 5432
           },
           // PostgreSQL connector #2. Replace placeholder values with real credentials.
@@ -139,17 +139,6 @@ module.exports = {
               gid: 'id',
               useCentroid: false
             }
-            // ,
-            // {
-            //   table: 'sok_adress',
-            //   // customType: 'td_2',
-            //   searchField: "CONCAT_WS(' | ', beladress , kommundel  ,fastighet)",
-            //   schema: 'sok_moa',
-            //   geometryName: 'geom',
-            //   title: 'Teknisk data 2',
-            //   gid: 'idpkey',
-            //   useCentroid: false
-            // }
           ]
         }
      },
