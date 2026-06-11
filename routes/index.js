@@ -35,6 +35,7 @@ router.get('/', function (req, res) {
 
 router.all('/addressestatesearch', searchAddressEstate);
 router.all('/search', search);
+router.all('/search/:searchEndpoint', search);
 router.all('/singlesearch', singleSearch);
 router.all('/estate/inskrivning', getInskrivning);
 router.all('/proxy', proxy);
