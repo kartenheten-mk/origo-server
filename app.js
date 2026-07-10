@@ -86,6 +86,21 @@ if (conf['cors']) {
   app.use(cors(corsOptions));
 }
 
+// ThingsBoard reverse-proxy (tbproxy combines auth + proxy middleware).
+// /tb          — entry point used by moaiot.js for all API calls and the dashboard iframe
+// /assets      — TB Angular SPA fetches locale files, icons, etc. via absolute /assets/...
+// /static      — compiled JS/CSS bundles referenced with absolute /static/...
+// /api         — TB REST API called by the Angular SPA with absolute /api/...
+// None of these paths conflict with origo-server's own routes (/origoserver/, /mapstate, /lmap).
+const tbProxy = require('./handlers/tbproxy').proxy;
+if (tbProxy) {
+  app.use('/tb',     tbProxy);
+  app.use('/assets', tbProxy);
+  app.use('/static', tbProxy);
+  app.use('/api',    tbProxy);
+  console.log('ThingsBoard proxy mounted at /tb /assets /static /api');
+}
+
 app.use('/origoserver/', routes);
 app.use('/mapstate', mapStateRouter);
 if (conf['lmapiproxy']) {
